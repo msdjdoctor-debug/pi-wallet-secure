@@ -1,0 +1,24 @@
+// src/app/api/bridge/lock/route.ts
+import { NextRequest} from "next/server";
+import { mintPiOnStellar } from "@/lib/stellar-bridge";
+
+export async function POST(req: Request) {
+  const { stellarAddress, amount, piTxId } = await req.json();
+
+  // Güvenlik kontrolleri
+  if (!stellarAddress.startsWith("G") || amount <= 0 || !piTxId) {
+    return Response.json({ error: "Geçersiz veri" }, { status: 400 });
+  }
+
+  try {
+    const stellarTxHash = await mintPiOnStellar(stellarAddress, amount.toString(), piTxId);
+
+    return Response.json({
+      success: true,
+      stellarTx: `https://stellar.expert/explorer/public/tx/${stellarTxHash}`,
+      message: `${amount} Pi başarıyla Stellar ağına köprülendi!`,
+    });
+  } catch (error: any) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
